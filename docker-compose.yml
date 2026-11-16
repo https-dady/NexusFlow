@@ -1,0 +1,105 @@
+# NexusFlow production stack.
+#
+#   copy .env.docker.example .env.docker
+#   edit every secret in .env.docker
+#   docker compose --env-file .env.docker up -d --build
+#
+# Add the optional MQTT broker with:
+#   docker compose --env-file .env.docker --profile mqtt up -d
+
+services:
+  mongo:
+    image: mongo:7.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in .env.docker}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env.docker}
+      MONGO_INITDB_DATABASE: nexusflow
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'mongosh --quiet --username "$$MONGO_INITDB_ROOT_USERNAME" --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "db.adminCommand(''ping'').ok" | grep -q 1',
+        ]
+      interval: 10s
+      timeout: 8s
+      retries: 10
+      start_period: 20s
+    networks:
+      - nexusflow
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/nexusflow?authSource=admin
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env.docker}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:5000}
+      SEED_SUPERADMIN_EMAIL: ${SEED_SUPERADMIN_EMAIL:?Set SEED_SUPERADMIN_EMAIL in .env.docker}
+      SEED_SUPERADMIN_PASSWORD: ${SEED_SUPERADMIN_PASSWORD:?Set SEED_SUPERADMIN_PASSWORD in .env.docker}
+      SEED_SUPERADMIN_NAME: ${SEED_SUPERADMIN_NAME:-NexusFlow Admin}
+      TELEMETRY_RETENTION_DAYS: ${TELEMETRY_RETENTION_DAYS:-30}
+      ROLLUP_1M_RETENTION_DAYS: ${ROLLUP_1M_RETENTION_DAYS:-90}
+      ROLLUP_1H_RETENTION_DAYS: ${ROLLUP_1H_RETENTION_DAYS:-730}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-true}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      MQTT_ENABLED: ${MQTT_ENABLED:-false}
+      MQTT_URL: ${MQTT_URL:-mqtt://mqtt:1883}
+      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-nexusflow/v1}
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-NexusFlow <no-reply@nexusflow.local>}
+    ports:
+      - '${APP_PORT:-5000}:5000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:5000/api/v1/health').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    networks:
+      - nexusflow
+
+  # Optional broker for the hardware ingestion path. Start with --profile mqtt.
+  mqtt:
+    image: eclipse-mosquitto:2
+    profiles: ['mqtt']
+    restart: unless-stopped
+    volumes:
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-data:/mosquitto/data
+    ports:
+      - '${MQTT_PORT:-1883}:1883'
+    networks:
+      - nexusflow
+
+volumes:
+  mongo-data:
+  mqtt-data:
+
+networks:
+  nexusflow:
+    driver: bridge
