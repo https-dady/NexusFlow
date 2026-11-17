@@ -1,0 +1,182 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+
+  --color-ink: #000000;
+  --color-ink-soft: #1b1b1c;
+  --color-flame: #fd8549;
+  --color-flame-deep: #e96d30;
+  --color-gold: #ffc123;
+  --color-sand: #ddbd72;
+  --color-mist: #f1f3f5;
+  --color-cloud: #f7f7f5;
+  --color-cream: #fbf9f4;
+  --color-line: #e7e5df;
+  --color-muted: #77746d;
+  --color-success: #1f8a5b;
+  --color-danger: #d9483b;
+  --color-info: #4f6b8c;
+
+  --radius-xl2: 1.35rem;
+  --shadow-card: 0 1px 2px rgb(16 15 12 / 0.04), 0 12px 32px -18px rgb(16 15 12 / 0.18);
+  --shadow-float: 0 24px 60px -28px rgb(16 15 12 / 0.32);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-cloud);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: rgb(253 133 73 / 0.28);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-flame);
+    outline-offset: 2px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d7d4cc;
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #bdb9af;
+    background-clip: padding-box;
+    border: 3px solid transparent;
+  }
+}
+
+@layer components {
+  .surface {
+    @apply rounded-[1.35rem] border border-line/80 bg-white shadow-card;
+  }
+
+  .surface-soft {
+    @apply rounded-[1.35rem] border border-line/60 bg-cream;
+  }
+
+  .label {
+    @apply mb-1.5 block text-[11px] font-semibold tracking-[0.14em] text-muted uppercase;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink shadow-[0_1px_0_rgba(16,15,12,0.02)] transition placeholder:text-muted/60 focus:border-flame focus:ring-4 focus:ring-flame/10 focus:outline-none disabled:cursor-not-allowed disabled:bg-mist/60;
+  }
+
+  .table-shell {
+    @apply w-full border-collapse text-left text-sm;
+  }
+
+  .table-shell thead th {
+    @apply border-b border-line/80 bg-cloud/70 px-4 py-3 text-[10.5px] font-semibold tracking-[0.14em] whitespace-nowrap text-muted uppercase;
+  }
+
+  .table-shell tbody td {
+    @apply border-b border-line/50 px-4 py-3.5 align-middle;
+  }
+
+  .table-shell tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .table-shell tbody tr {
+    @apply transition-colors hover:bg-cream/80;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .grain {
+    background-image: radial-gradient(rgb(255 255 255 / 0.14) 0.6px, transparent 0.6px);
+    background-size: 14px 14px;
+  }
+
+  .animate-in {
+    animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, #efede7 25%, #f8f6f1 37%, #efede7 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(31 138 91 / 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgb(31 138 91 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(31 138 91 / 0);
+  }
+}
+
+.live-dot {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+.recharts-cartesian-axis-tick text {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  fill: #8a867d;
+}
+
+.recharts-default-tooltip {
+  border-radius: 14px !important;
+  border: 1px solid #e7e5df !important;
+  box-shadow: 0 18px 40px -24px rgb(16 15 12 / 0.4) !important;
+}
